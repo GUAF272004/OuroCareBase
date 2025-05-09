@@ -17,6 +17,7 @@ dependencies:
   intl: ^0.19.0 # Para formateo de fechas
   qr_flutter: ^4.1.0 # Para generar QR (App Paciente)
   mobile_scanner: ^5.1.0 # Para escanear QR (App Doctor)
+  day_night_time_picker: ^1.2.1
   # Descomenta y añade otros paquetes cuando los necesites:
   # qr_code_scanner: ^any
   # table_calendar: ^any

@@ -1,18 +1,21 @@
+// lib/models/medication_schedule_entry_model.dart
 import 'package:intl/intl.dart';
 
 class MedicationScheduleEntry {
-  final String scheduleId;
-  final String prescriptionItemId; // ID del item de la receta
+  final String scheduleId; // Unique ID for this specific scheduled instance
+  final String prescriptionId;
+  final String medicineItemId;
   final String patientId;
   final String medicationName;
-  final String dosage;
-  final DateTime dueTime; // Fecha y hora programada
-  DateTime? takenAt; // Fecha y hora en que se tomó, null si no se ha tomado
+  final String dosage; // Ej: "1 comprimido", "500 mg" (poblado por el backend desde MedicineItem)
+  final DateTime dueTime; // Hora programada
+  DateTime? takenAt; // Hora real de toma
   String status; // 'PENDIENTE', 'TOMADO', 'OMITIDO'
 
   MedicationScheduleEntry({
     required this.scheduleId,
-    required this.prescriptionItemId,
+    required this.prescriptionId,
+    required this.medicineItemId,
     required this.patientId,
     required this.medicationName,
     required this.dosage,
@@ -24,7 +27,8 @@ class MedicationScheduleEntry {
   factory MedicationScheduleEntry.fromJson(Map<String, dynamic> json) {
     return MedicationScheduleEntry(
       scheduleId: json['schedule_id'] as String,
-      prescriptionItemId: json['prescription_item_id'] as String,
+      prescriptionId: json['prescription_id'] as String,
+      medicineItemId: json['medicine_item_id'] as String,
       patientId: json['patient_id'] as String,
       medicationName: json['medication_name'] as String,
       dosage: json['dosage'] as String,
@@ -37,7 +41,8 @@ class MedicationScheduleEntry {
   Map<String, dynamic> toJson() {
     return {
       'schedule_id': scheduleId,
-      'prescription_item_id': prescriptionItemId,
+      'prescription_id': prescriptionId,
+      'medicine_item_id': medicineItemId,
       'patient_id': patientId,
       'medication_name': medicationName,
       'dosage': dosage,

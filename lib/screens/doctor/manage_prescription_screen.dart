@@ -1,10 +1,11 @@
 // lib/screens/doctor/manage_prescription_screen.dart
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart'; // Para formatear la fecha
 import 'package:provider/provider.dart';
 import '../../models/user_model.dart';
-import '../../models/medicine_item_model.dart';
+import '../../models/medicine_item_model.dart'; // Asegúrate que la ruta sea correcta
 import '../../services/auth_service.dart';
-// import '../../services/api_service.dart'; // Para guardar la receta final
+import '../../services/api_service.dart'; // Para guardar la receta final
 
 import 'add_medicine_screen.dart';
 import 'delete_medicine_screen.dart';
@@ -22,19 +23,22 @@ class ManagePrescriptionScreen extends StatefulWidget {
   });
 
   @override
-  _ManagePrescriptionScreenState createState() => _ManagePrescriptionScreenState();
+  _ManagePrescriptionScreenState createState() =>
+      _ManagePrescriptionScreenState();
 }
 
 class _ManagePrescriptionScreenState extends State<ManagePrescriptionScreen> {
   List<MedicineItem> _addedMedicines = [];
   bool _isSaving = false;
 
-  User? _currentDoctor; // Para mostrar info del doctor
+  User? _currentDoctor;
+  // ApiService? _apiService; // Descomentar si se usa
 
   @override
   void initState() {
     super.initState();
     _currentDoctor = Provider.of<AuthService>(context, listen: false).currentUser;
+    // _apiService = Provider.of<ApiService>(context, listen: false); // Descomentar si se usa
   }
 
   void _navigateAndAddMedicine(BuildContext context) async {
@@ -59,7 +63,9 @@ class _ManagePrescriptionScreenState extends State<ManagePrescriptionScreen> {
     }
     final result = await Navigator.push<List<MedicineItem>>(
       context,
-      MaterialPageRoute(builder: (context) => DeleteMedicineScreen(currentMedicines: _addedMedicines)),
+      MaterialPageRoute(
+          builder: (context) =>
+              DeleteMedicineScreen(currentMedicines: _addedMedicines)),
     );
 
     if (result != null) {
@@ -72,7 +78,18 @@ class _ManagePrescriptionScreenState extends State<ManagePrescriptionScreen> {
   Future<void> _savePrescription() async {
     if (_addedMedicines.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Añada al menos un medicamento antes de guardar.'), backgroundColor: Colors.orangeAccent),
+        SnackBar(
+            content: Text('Añada al menos un medicamento antes de guardar.'),
+            backgroundColor: Colors.orangeAccent),
+      );
+      return;
+    }
+
+    if (_currentDoctor == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('No se pudo identificar al doctor. Intente de nuevo.'),
+            backgroundColor: Colors.red),
       );
       return;
     }
@@ -82,47 +99,60 @@ class _ManagePrescriptionScreenState extends State<ManagePrescriptionScreen> {
     // Datos de la receta completa
     final prescriptionData = {
       'patientId': widget.patientId,
-      'patientName': widget.patientName,
-      'doctorId': _currentDoctor?.id ?? 'N/A',
-      'doctorName': _currentDoctor?.name ?? 'N/A',
+      'patientName': widget.patientName, // El backend podría buscarlo con patientId
+      'doctorId': _currentDoctor!.id,
+      'doctorName': _currentDoctor!.name, // El backend podría buscarlo con doctorId
       'issueDate': DateTime.now().toIso8601String(),
-      'medicines': _addedMedicines.map((med) => {
-        'name': med.name,
-        'dosage': med.dosage,
-        'instructions': med.instructions,
-      }).toList(),
+      // Usar toJson() de cada MedicineItem si la API espera esa estructura
+      'medicines': _addedMedicines.map((med) => med.toJson()).toList(), // <<--- CAMBIO AQUÍ
       'status': 'PENDIENTE', // Estado inicial de la receta
     };
 
-    // TODO: Llamar al ApiService para guardar `prescriptionData` en el backend/blockchain
-    // final apiService = Provider.of<ApiService>(context, listen: false);
-    // bool success = await apiService.saveCompletePrescription(prescriptionData);
+    // TODO: Llamar al ApiService para guardar `prescriptionData` en el backend
+    // Descomentar y usar cuando ApiService y su método estén listos
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    bool success = false;
+    try {
+      // Asumiendo que tienes un método en ApiService como `createPrescription`
+      // que toma un Map<String, dynamic> similar a `prescriptionData`.
+      // success = await apiService.createFullPrescription(prescriptionData);
+      print('Guardando Receta (simulación):');
+      print(prescriptionData);
+      await Future.delayed(Duration(seconds: 1));
+      success = true; // Simular éxito
 
-    // Simulación
-    print('Guardando Receta (simulación):');
-    print(prescriptionData);
-    await Future.delayed(Duration(seconds: 1));
-    bool success = true; // Simular éxito
+    } catch (e) {
+      print("Error al guardar receta: $e");
+      success = false;
+    }
 
-    setState(() => _isSaving = false);
 
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Receta guardada exitosamente para ${widget.patientName}.'), backgroundColor: Colors.green),
-      );
-      // Limpiar lista y/o navegar fuera
-      setState(() {
-        _addedMedicines.clear();
-      });
-      Navigator.of(context).pop(); // Volver a la pantalla anterior (ej. PatientOverviewScreen)
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al guardar la receta.'), backgroundColor: Colors.red),
-      );
+    if (mounted) {
+      setState(() => _isSaving = false);
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+              Text('Receta guardada exitosamente para ${widget.patientName}.'),
+              backgroundColor: Colors.green),
+        );
+        setState(() {
+          _addedMedicines.clear();
+        });
+        Navigator.of(context).pop(true); // Devuelve true para indicar éxito
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Error al guardar la receta.'),
+              backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
-  Widget _buildActionButton(BuildContext context, String label, IconData icon, VoidCallback onPressed, {Color? color}) {
+  Widget _buildActionButton(BuildContext context, String label, IconData icon,
+      VoidCallback onPressed, {Color? color}) {
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4.0),
@@ -145,34 +175,47 @@ class _ManagePrescriptionScreenState extends State<ManagePrescriptionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Gestionar Receta para ${widget.patientName}'),
+        title: Text('Receta para ${widget.patientName}'),
       ),
       body: Column(
         children: <Widget>[
-          // Mitad Superior: Botones de Acción
           Container(
             padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor, // Usar color de tarjeta del tema
               boxShadow: [
-                BoxShadow(color: Colors.grey.withOpacity(0.3), spreadRadius: 1, blurRadius: 3, offset: Offset(0, 2)),
+                BoxShadow(
+                    color: Colors.grey.withOpacity(0.3),
+                    spreadRadius: 1,
+                    blurRadius: 3,
+                    offset: Offset(0, 2)),
               ],
-              // border: Border(bottom: BorderSide(color: Colors.grey.shade300))
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: <Widget>[
-                _buildActionButton(context, 'Añadir Medicina', Icons.add_circle_outline, () => _navigateAndAddMedicine(context)),
-                _buildActionButton(context, 'Eliminar Medicina', Icons.remove_circle_outline, () => _navigateAndDeleteMedicine(context), color: Colors.orange[700]),
-                _buildActionButton(context, 'Guardar Receta', Icons.save_alt_outlined, _savePrescription, color: Colors.green[700]),
+                _buildActionButton(context, 'Añadir', Icons.add_box_outlined, // Icono más adecuado
+                        () => _navigateAndAddMedicine(context)),
+                _buildActionButton(context, 'Eliminar', Icons.indeterminate_check_box_outlined, // Icono más adecuado
+                        () => _navigateAndDeleteMedicine(context),
+                    color: Colors.orange[700]),
+                _buildActionButton(context, 'Guardar', Icons.save_alt_outlined,
+                    _savePrescription,
+                    color: Colors.green[700]),
               ],
             ),
           ),
-
-          // Mitad Inferior: Previsualización de la Receta
           Expanded(
             child: _isSaving
-                ? Center(child: CircularProgressIndicator(semanticsLabel: 'Guardando receta...'))
+                ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 10),
+                    Text('Guardando receta...')
+                  ],
+                ))
                 : _buildPrescriptionPreview(),
           ),
         ],
@@ -182,13 +225,14 @@ class _ManagePrescriptionScreenState extends State<ManagePrescriptionScreen> {
 
   Widget _buildPrescriptionPreview() {
     final doctorName = _currentDoctor?.name ?? "Dr. Desconocido";
-    final doctorId = _currentDoctor?.id ?? "N/A";
-    // Idealmente tendrías más datos del paciente si pasas el objeto PatientForDoctorView
+    final doctorSpecialty = _currentDoctor?.specialty ?? "Especialidad Desconocida"; // Asumiendo que User tiene specialty
     final patientName = widget.patientName;
-    final patientId = widget.patientId;
+
+    final DateFormat dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+
 
     return Container(
-      color: Colors.grey[100], // Fondo ligeramente diferente para la previsualización
+      color: Theme.of(context).scaffoldBackgroundColor,
       padding: EdgeInsets.all(16.0),
       child: _addedMedicines.isEmpty
           ? Center(
@@ -205,28 +249,37 @@ class _ManagePrescriptionScreenState extends State<ManagePrescriptionScreen> {
           ],
         ),
       )
-          : SingleChildScrollView( // Para permitir scroll si la info es mucha
+          : SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text('Previsualización de Receta Médica', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColorDark)),
+            Text('Previsualización de Receta Médica',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColorDark)),
             SizedBox(height: 16),
             Card(
               elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildPreviewHeader('Paciente:', '$patientName (ID: $patientId)'),
-                    _buildPreviewHeader('Doctor:', '$doctorName (ID: $doctorId)'),
-                    _buildPreviewHeader('Fecha de Emisión:', '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}'),
+                    _buildPreviewHeader('Paciente:', patientName),
+                    _buildPreviewHeader('Atendido por:', doctorName),
+                    _buildPreviewHeader('Especialidad:', doctorSpecialty),
+                    _buildPreviewHeader('Fecha y Hora:', dateFormat.format(DateTime.now())),
                     Divider(height: 30, thickness: 1),
-                    Text('Medicamentos:', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
+                    Text('Rp/', // Indicador de receta
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleLarge
+                            ?.copyWith(fontWeight: FontWeight.bold)),
                     SizedBox(height: 10),
-                    ListView.builder(
+                    ListView.separated( // Usar separated para dividers más consistentes
                       shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(), // No necesita scroll propio
+                      physics: NeverScrollableScrollPhysics(),
                       itemCount: _addedMedicines.length,
                       itemBuilder: (context, index) {
                         final med = _addedMedicines[index];
@@ -235,22 +288,23 @@ class _ManagePrescriptionScreenState extends State<ManagePrescriptionScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('${index + 1}. ${med.name}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              Text('${index + 1}. ${med.name}',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16)),
                               Padding(
                                 padding: const EdgeInsets.only(left: 18.0, top: 4.0),
-                                child: Text('Dosis: ${med.dosage}', style: TextStyle(fontSize: 14)),
-                              ),
-                              if (med.instructions.isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 18.0, top: 2.0),
-                                  child: Text('Instrucciones: ${med.instructions}', style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Colors.grey[700])),
+                                // Usar fullDosageDescription para mostrar los detalles
+                                child: Text(
+                                  med.fullDosageDescription, // <<--- CAMBIO AQUÍ
+                                  style: TextStyle(fontSize: 14, color: Colors.black87),
                                 ),
-                              if (index < _addedMedicines.length - 1)
-                                Divider(indent: 18, endIndent: 18, height: 16),
+                              ),
                             ],
                           ),
                         );
                       },
+                      separatorBuilder: (context, index) => Divider(indent: 18, endIndent: 18, height: 16, thickness: 0.5),
                     ),
                   ],
                 ),
@@ -264,13 +318,13 @@ class _ManagePrescriptionScreenState extends State<ManagePrescriptionScreen> {
 
   Widget _buildPreviewHeader(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(vertical: 3.0), // Reducir padding vertical
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+          Text(label, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.black54)), // Estilo de label
           SizedBox(width: 8),
-          Expanded(child: Text(value, style: TextStyle(fontSize: 15))),
+          Expanded(child: Text(value, style: TextStyle(fontSize: 15, color: Colors.black87))),
         ],
       ),
     );

@@ -1,3 +1,6 @@
+// lib/models/user_model.dart
+
+// El enum UserRole ya está definido como lo proporcionaste
 enum UserRole { patient, doctor, salesManager, labManager, unknown }
 
 class User {
@@ -6,6 +9,8 @@ class User {
   final String email;
   final UserRole role;
   final String? token; // Para la gestión de sesión
+  final String? qrIdentifier; // Añadido de tu análisis anterior, hazlo opcional
+  final String? specialty; // <<--- CAMPO AÑADIDO PARA LA ESPECIALIDAD DEL DOCTOR
 
   User({
     required this.id,
@@ -13,16 +18,20 @@ class User {
     required this.email,
     required this.role,
     this.token,
+    this.qrIdentifier, // Añadido al constructor
+    this.specialty,    // <<--- AÑADIDO AL CONSTRUCTOR
   });
 
   // Factory constructor para crear un User desde un JSON (ej. respuesta de API)
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      email: json['email'] as String,
+      id: json['id'] as String? ?? json['user_id'] as String? ?? 'fallback_id', // Más robusto
+      name: json['name'] as String? ?? 'Nombre no disponible',
+      email: json['email'] as String? ?? 'email_no_disponible@example.com',
       role: _parseRole(json['role'] as String? ?? ''),
       token: json['token'] as String?,
+      qrIdentifier: json['qrIdentifier'] as String?, // Mapear qrIdentifier
+      specialty: json['specialty'] as String?,      // <<--- MAPEAR SPECIALTY DESDE JSON
     );
   }
 
@@ -33,22 +42,23 @@ class User {
       'email': email,
       'role': role.toString().split('.').last, // Convierte enum a string 'patient', 'doctor', etc.
       'token': token,
+      'qrIdentifier': qrIdentifier, // Incluir qrIdentifier
+      'specialty': specialty,       // <<--- INCLUIR SPECIALTY EN JSON
     };
   }
 
   static UserRole _parseRole(String roleString) {
-    switch (roleString.toLowerCase()) {
+    switch (roleString.toLowerCase().replaceAll('_', '')) { // Hacer más flexible el parseo
       case 'patient':
         return UserRole.patient;
       case 'doctor':
         return UserRole.doctor;
-      case 'salesmanager':
-      case 'sales_manager':
+      case 'salesmanager': // Cubre 'salesmanager' y 'sales_manager'
         return UserRole.salesManager;
-      case 'labmanager':
-      case 'lab_manager':
+      case 'labmanager':   // Cubre 'labmanager' y 'lab_manager'
         return UserRole.labManager;
       default:
+        print("Advertencia: Rol desconocido recibido desde la API: '$roleString'");
         return UserRole.unknown;
     }
   }
@@ -70,14 +80,16 @@ class User {
   }
 }
 
+// La clase PatientForDoctorView y samplePatients permanecen igual que las proporcionaste.
+// Solo nos enfocamos en la clase User para este error.
 class PatientForDoctorView {
   final String id;
   final String name;
   final String email;
   final DateTime lastVisit;
-  final DateTime? dateOfBirth; // Nuevo: Fecha de Nacimiento
-  final String? phoneNumber;   // Nuevo: Número de Teléfono
-  final String? photoUrl;      // Nuevo: URL de Foto (usaremos placeholder)
+  final DateTime? dateOfBirth;
+  final String? phoneNumber;
+  final String? photoUrl;
 
   PatientForDoctorView({
     required this.id,
@@ -95,7 +107,7 @@ List<PatientForDoctorView> samplePatients = [
       id: 'p001', name: 'Ana Torres', email: 'ana.torres@email.com',
       lastVisit: DateTime.now().subtract(Duration(days: 30)),
       dateOfBirth: DateTime(1985, 5, 15), phoneNumber: '555-0101',
-      photoUrl: 'https://via.placeholder.com/150/FFA500/FFFFFF?Text=AT' // Placeholder image
+      photoUrl: 'https://via.placeholder.com/150/FFA500/FFFFFF?Text=AT'
   ),
   PatientForDoctorView(
       id: 'p002', name: 'Luis Vera', email: 'luis.vera@email.com',
