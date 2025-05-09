@@ -12,7 +12,7 @@ import 'lab_manager/lab_dashboard_screen.dart';
 // import 'login_screen.dart'; // No es necesario para logout aquí si main.dart lo maneja
 
 class HomeScreen extends StatelessWidget {
-  // static const routeName = '/home'; // Ya no se necesita si no se navega por nombre aquí
+  // static const routeName = '/home'; // Ya no se necesita si no se navega por nombre aquí Esto es una prueba Andre se la come
   final User user;
 
   HomeScreen({required this.user});
