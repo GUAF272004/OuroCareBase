@@ -19,11 +19,12 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  // Los controllers son útiles para poder acceder/limpiar los campos si es necesario
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  // bool _isLoading = false; // <<--- ELIMINADO (AuthService._isAttemptingLogin maneja la carga global)
+  // ---- INICIO: NUEVO ESTADO PARA VISIBILIDAD DE CONTRASEÑA ----
+  bool _isPasswordVisible = false;
+  // ---- FIN: NUEVO ESTADO PARA VISIBILIDAD DE CONTRASEÑA ----
 
   @override
   void dispose() {
@@ -33,30 +34,16 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
-    // AuthService se encargará de limpiar su propio authErrorMessage al inicio de login()
-    // Provider.of<AuthService>(context, listen: false).clearAuthError(); // Si tuvieras un método público para esto
-
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    _formKey.currentState!.save(); // Esto no es estrictamente necesario si usas controllers
+    _formKey.currentState!.save();
 
     final email = _emailController.text;
     final password = _passwordController.text;
 
-    // setState(() { _isLoading = true; }); // <<--- ELIMINADO
-
     final authService = Provider.of<AuthService>(context, listen: false);
     await authService.login(email, password);
-
-    // No necesitamos verificar 'success' aquí para el mensaje de error.
-    // AuthService actualiza 'authErrorMessage' y notifica.
-    // Si el login es exitoso, el Consumer en main.dart navegará a HomeScreen.
-    // Si falla, main.dart mantendrá LoginScreen, y el authErrorMessage se mostrará.
-
-    // setState(() { _isLoading = false; }); // <<--- ELIMINADO
-    // El estado de carga es manejado ahora por AuthService.isAttemptingLogin
-    // y el Consumer en main.dart que muestra LoadingScreen.
   }
 
   void _navigateToRegistrationScreen(UserRole role) {
@@ -112,7 +99,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // Escuchar AuthService para el mensaje de error y el estado de carga
     final authService = Provider.of<AuthService>(context);
 
     return Scaffold(
@@ -126,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Icon(Icons.medical_services_outlined, size: 80, color: theme.colorScheme.primary),
               SizedBox(height: 20),
               Text(
-                'Bienvenido a SaludChain', // O el nombre de tu app
+                'Bienvenido a SaludChain',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.headlineMedium?.copyWith(
                   color: theme.colorScheme.primary,
@@ -148,23 +134,35 @@ class _LoginScreenState extends State<LoginScreen> {
                         }
                         return null;
                       },
-                      // onSaved no es necesario si lees de _emailController.text
                     ),
                     SizedBox(height: 16),
                     TextFormField(
                       controller: _passwordController,
-                      decoration: InputDecoration(labelText: 'Contraseña', prefixIcon: Icon(Icons.lock_outline)),
-                      obscureText: true,
+                      // ---- INICIO: CAMBIOS PARA VISIBILIDAD DE CONTRASEÑA ----
+                      obscureText: !_isPasswordVisible, // Controlado por el estado
+                      decoration: InputDecoration(
+                        labelText: 'Contraseña',
+                        prefixIcon: Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isPasswordVisible ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isPasswordVisible = !_isPasswordVisible;
+                            });
+                          },
+                        ),
+                      ),
+                      // ---- FIN: CAMBIOS PARA VISIBILIDAD DE CONTRASEÑA ----
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Por favor ingrese su contraseña.';
                         }
                         return null;
                       },
-                      // onSaved no es necesario si lees de _passwordController.text
                     ),
                     SizedBox(height: 12),
-                    // Mostrar el mensaje de error directamente desde AuthService
                     if (authService.authErrorMessage != null)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 10.0, top: 5.0),
@@ -175,15 +173,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     SizedBox(height: authService.authErrorMessage != null ? 12 : 24),
-                    // El botón de Iniciar Sesión. El indicador de carga global
-                    // (LoadingScreen desde main.dart) se mostrará si authService.isAttemptingLogin es true.
-                    // Si quieres un spinner local *además* del global, podrías usar authService.isAttemptingLogin aquí.
-                    // Pero si el global ya reemplaza esta pantalla, no se verá.
-                    // Por simplicidad, quitamos el spinner local:
                     ElevatedButton(
-                      onPressed: authService.isAttemptingLogin ? null : _submit, // Deshabilitar si ya se está intentando
+                      onPressed: authService.isAttemptingLogin ? null : _submit,
                       child: authService.isAttemptingLogin
-                          ? SizedBox( // Mostrar un pequeño spinner en el botón si se desea
+                          ? SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
