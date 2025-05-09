@@ -1,49 +1,105 @@
-// import 'package:http/http.dart' as http;
-// import 'dart:convert';
+// lib/services/api_service.dart
+
+import 'package:http/http.dart' as http; // Descomentado para futuras implementaciones
+import 'dart:convert'; // Descomentado para futuras implementaciones
+
+// Modelos que este servicio podría necesitar (descomentar según sea necesario)
 // import '../models/prescription_model.dart';
 // import '../models/lab_result_model.dart';
-// import '../services/auth_service.dart'; // Para obtener el token
+// import '../models/user_model.dart'; // Por ejemplo, si ApiService necesita datos del usuario
+
+// Servicio de autenticación, si ApiService necesita el token de usuario
+// import './auth_service.dart';
+
+// Definición de la URL base de la API como se sugiere en la guía
+// Asegúrate de que esta IP sea la correcta para tu Raspberry Pi y que sea accesible
+// desde el dispositivo donde ejecutas la app Flutter.
+const String RASPBERRY_PI_IP = "192.168.17.143"; // Reemplaza con la IP de TU RASPBERRY PI
+const String API_BASE_URL = "http://$RASPBERRY_PI_IP/api";
 
 class ApiService {
-  final String _baseUrl = 'TU_API_BASE_URL'; // Reemplaza con tu URL
-// final AuthService _authService; // Podrías inyectar AuthService para obtener el token
+  // Usar la constante API_BASE_URL definida arriba
+  final String _baseUrl = API_BASE_URL;
 
-// ApiService(this._authService);
+// Podrías inyectar AuthService si necesitas acceder al token del usuario actual
+// para las cabeceras de autorización.
+// final AuthService? authService;
+// ApiService({this.authService});
 
-// String? get _token => _authService.currentUser?.token;
+// Ejemplo de cómo podrías obtener el token si AuthService es inyectado
+// String? get _token => authService?.currentUser?.token;
 
-// Future<Map<String, String>> _getHeaders() async {
-//   final token = _token;
-//   if (token == null) {
-//     throw Exception('No autenticado para realizar la petición');
+// Ejemplo de cómo podrías construir las cabeceras, incluyendo el token de autorización
+// Future<Map<String, String>> _getHeaders({bool requiresAuth = true}) async {
+//   final headers = {'Content-Type': 'application/json; charset=UTF-8'};
+//   if (requiresAuth) {
+//     final token = _token;
+//     if (token == null) {
+//       // Manejar el caso donde se requiere autenticación pero no hay token
+//       // Podrías lanzar una excepción o redirigir al login.
+//       throw Exception('Error: Se requiere autenticación pero no se encontró token.');
+//     }
+//     headers['Authorization'] = 'Bearer $token';
 //   }
-//   return {
-//     'Content-Type': 'application/json',
-//     'Authorization': 'Bearer $token',
-//   };
+//   return headers;
 // }
 
-// --- Ejemplos de Métodos (PENDIENTE DE IMPLEMENTACIÓN REAL) ---
+// --- Métodos de API (Ejemplos para futura implementación) ---
 
+// Ejemplo: Obtener recetas de un paciente
 // Future<List<Prescription>> getPatientPrescriptions(String patientId) async {
-//   // final response = await http.get(Uri.parse('$_baseUrl/patients/$patientId/prescriptions'), headers: await _getHeaders());
-//   // if (response.statusCode == 200) {
-//   //   List<dynamic> data = json.decode(response.body);
-//   //   return data.map((item) => Prescription.fromJson(item)).toList();
-//   // } else {
-//   //   throw Exception('Failed to load prescriptions');
-//   // }
-//   await Future.delayed(Duration(milliseconds: 700)); // Simular
-//   return samplePrescriptions.where((p) => p.patientId == patientId).toList(); // Simulación
+//   final String url = '$_baseUrl/get_patient_prescriptions.php?patient_id=$patientId';
+//   try {
+//     // final headers = await _getHeaders(); // Usar _getHeaders si se requiere autenticación
+//     final response = await http.get(
+//       Uri.parse(url),
+//       // headers: headers,
+//     ).timeout(const Duration(seconds: 15));
+
+//     if (response.statusCode == 200) {
+//       final responseData = json.decode(response.body);
+//       if (responseData['status'] == 'success' && responseData['prescriptions'] != null) {
+//         List<dynamic> prescriptionsJson = responseData['prescriptions'];
+//         // Aquí iría la lógica para parsear prescriptionsJson a List<Prescription>
+//         // return prescriptionsJson.map((data) => Prescription.fromJson(data)).toList();
+//         return []; // Placeholder
+//       } else {
+//         throw Exception(responseData['message'] ?? 'Error al obtener recetas del servidor.');
+//       }
+//     } else {
+//       throw Exception('Error del servidor (${response.statusCode}) al obtener recetas.');
+//     }
+//   } catch (e) {
+//     // Manejar errores de red, timeout, etc.
+//     throw Exception('Error de conexión o al procesar la solicitud: $e');
+//   }
 // }
 
-// Future<bool> issuePrescription(Map<String, dynamic> prescriptionData) async {
-//   // final response = await http.post(Uri.parse('$_baseUrl/prescriptions'), headers: await _getHeaders(), body: json.encode(prescriptionData));
-//   // return response.statusCode == 201; // 201 Created
-//   print('Simulando emisión de receta: $prescriptionData');
-//   await Future.delayed(Duration(seconds: 1));
-//   return true;
+// Ejemplo: Crear una nueva receta
+// Future<bool> createPrescription(Map<String, dynamic> prescriptionData) async {
+//   final String url = '$_baseUrl/create_prescription.php';
+//   try {
+//     // final headers = await _getHeaders(); // Asumiendo que crear receta requiere autenticación
+//     final response = await http.post(
+//       Uri.parse(url),
+//       // headers: headers,
+//       body: json.encode(prescriptionData),
+//     ).timeout(const Duration(seconds: 15));
+
+//     if (response.statusCode == 201) { // 201 Created
+//       final responseData = json.decode(response.body);
+//       return responseData['status'] == 'success';
+//     } else {
+//       // Manejar error, posiblemente leyendo responseData['message']
+//       throw Exception('Error del servidor (${response.statusCode}) al crear receta.');
+//     }
+//   } catch (e) {
+//     throw Exception('Error de conexión o al procesar la solicitud: $e');
+//   }
 // }
 
-// ... otros métodos para actualizar estado de receta, obtener/actualizar resultados de laboratorio, etc.
+// ... puedes añadir aquí más métodos para interactuar con otros scripts PHP de tu API ...
+// Por ejemplo:
+// Future<UserProfile> getPatientProfile(String patientId) async { ... }
+// Future<bool> updateMedicalHistory(Map<String, dynamic> historyData) async { ... }
 }
