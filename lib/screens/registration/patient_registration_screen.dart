@@ -1,5 +1,7 @@
 // lib/screens/registration/patient_registration_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // Asegúrate de tener esta importación y el paquete provider
+import '../../services/auth_service.dart'; // Ajusta la ruta si es diferente
 import 'components/registration_form_field.dart';
 import 'components/file_picker_placeholder.dart'; // Placeholder para archivos
 
@@ -10,7 +12,7 @@ class PatientRegistrationScreen extends StatefulWidget {
 
 class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
-  bool _isLoading = false;
+  // bool _isLoading = false; // Se manejará con el AuthService.isRegistering
 
   // Controladores para campos de contraseña
   final TextEditingController _passwordController = TextEditingController();
@@ -20,14 +22,10 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
   String _nombreCompleto = '';
   String _email = '';
   String _telefono = '';
-  DateTime? _fechaNacimiento; // Para el DatePicker
+  DateTime? _fechaNacimiento;
   String? _tipoDeSangre;
-  // Para los placeholders de archivos, solo necesitas saber si se "adjuntó" algo (simulado)
-  // String _identificacionOficialPath;
-  // String _fotografiaPath;
 
   final List<String> _tiposDeSangre = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Desconocido'];
-
 
   @override
   void dispose() {
@@ -43,9 +41,9 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
       helpText: 'Seleccione su fecha de nacimiento',
-      builder: (context, child) { // Para aplicar el tema al DatePicker
+      builder: (context, child) {
         return Theme(
-          data: Theme.of(context), // Usa el tema de la app
+          data: Theme.of(context),
           child: child!,
         );
       },
@@ -57,45 +55,101 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
     }
   }
 
-  void _trySubmitForm() {
+  Future<void> _trySubmitForm() async { // Convertida a async
     final isValid = _formKey.currentState?.validate() ?? false;
-    FocusScope.of(context).unfocus(); // Ocultar teclado
+    FocusScope.of(context).unfocus();
+
+    // Validaciones adicionales explícitas si no están cubiertas por validadores de FormField
+    if (_fechaNacimiento == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Por favor seleccione su fecha de nacimiento.'), backgroundColor: Theme.of(context).colorScheme.error),
+      );
+      return;
+    }
+    if (_tipoDeSangre == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Por favor seleccione su tipo de sangre.'), backgroundColor: Theme.of(context).colorScheme.error),
+      );
+      return;
+    }
 
     if (isValid) {
       _formKey.currentState?.save();
-      setState(() => _isLoading = true);
+      // setState(() => _isLoading = true); // AuthService manejará el estado de carga
 
-      // Simulación de registro
-      print('--- Registro de Paciente ---');
+      // Usar Provider para obtener la instancia de AuthService
+      final authService = Provider.of<AuthService>(context, listen: false);
+
+      print('--- Enviando Datos de Registro de Paciente ---');
       print('Nombre: $_nombreCompleto');
       print('Email: $_email');
       print('Teléfono: $_telefono');
-      print('Fecha de Nacimiento: ${_fechaNacimiento?.toIso8601String()}');
+      print('Fecha de Nacimiento (ISO): ${_fechaNacimiento?.toIso8601String()}'); // El servicio lo formatea a YYYY-MM-DD
       print('Tipo de Sangre: $_tipoDeSangre');
       print('Contraseña: ${_passwordController.text}');
-      // print('ID Oficial: (path simulado)');
-      // print('Fotografía: (path simulado)');
 
-      // TODO: Llamar al servicio de autenticación/registro con los datos
-      // Ejemplo: await AuthService.registerPatient(...);
+      try {
+        final result = await authService.registerPatient(
+          name: _nombreCompleto,
+          email: _email,
+          password: _passwordController.text,
+          phone: _telefono,
+          birthDate: _fechaNacimiento,
+          bloodType: _tipoDeSangre,
+        );
 
-      Future.delayed(Duration(seconds: 1)).then((_) {
-        if (mounted) {
-          setState(() => _isLoading = false);
+        if (!mounted) return; // Verificar si el widget sigue montado
+
+        // setState(() => _isLoading = false); // AuthService notifica a los listeners
+
+        if (result['success'] == true) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Registro de paciente exitoso (simulación).'), backgroundColor: Colors.green),
+            SnackBar(
+              content: Text(result['message'] ?? 'Registro de paciente exitoso.'),
+              backgroundColor: Colors.green,
+            ),
           );
-          Navigator.of(context).pop(); // Volver a la pantalla anterior (Login o Diálogo)
+          // Navegar a la pantalla de login o directamente al dashboard si se hace auto-login
+          Navigator.of(context).pop();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Error durante el registro.'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
         }
-      });
+      } catch (error) {
+        // setState(() => _isLoading = false); // AuthService notifica
+        if (!mounted) return;
+        print("Error capturado en _trySubmitForm: $error");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ocurrió un error inesperado durante el registro.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Por favor corrija los errores en el formulario.'), backgroundColor: Colors.orangeAccent),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Escuchar el estado de carga del AuthService
+    final authService = Provider.of<AuthService>(context);
+    final bool isLoading = authService.isRegistering; // Usar el estado de AuthService
+
     return Scaffold(
-      appBar: AppBar(title: Text('Registro de Paciente')),
+      appBar: AppBar(
+        title: Text('Registro de Paciente'),
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
+      ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(20.0),
         child: Form(
@@ -106,34 +160,34 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
               RegistrationFormField(
                 labelText: 'Nombre Completo',
                 prefixIcon: Icons.person_outline,
-                validator: (value) => (value == null || value.isEmpty) ? 'Ingrese su nombre completo' : null,
-                onSaved: (value) => _nombreCompleto = value!,
+                validator: (value) => (value == null || value.trim().isEmpty) ? 'Ingrese su nombre completo' : null,
+                onSaved: (value) => _nombreCompleto = value!.trim(),
               ),
               RegistrationFormField(
                 labelText: 'Email',
                 prefixIcon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
-                  if (value == null || value.isEmpty || !value.contains('@')) {
+                  if (value == null || value.trim().isEmpty || !value.contains('@')) {
                     return 'Ingrese un email válido.';
                   }
                   return null;
                 },
-                onSaved: (value) => _email = value!,
+                onSaved: (value) => _email = value!.trim(),
               ),
               RegistrationFormField(
                 labelText: 'Teléfono',
                 prefixIcon: Icons.phone_outlined,
                 keyboardType: TextInputType.phone,
-                validator: (value) => (value == null || value.isEmpty) ? 'Ingrese su número de teléfono' : null,
-                onSaved: (value) => _telefono = value!,
+                validator: (value) => (value == null || value.trim().isEmpty) ? 'Ingrese su número de teléfono' : null,
+                onSaved: (value) => _telefono = value!.trim(),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: InputDecorator(
                   decoration: InputDecoration(
                     labelText: 'Fecha de Nacimiento',
-                    prefixIcon: Icon(Icons.calendar_today_outlined),
+                    prefixIcon: Icon(Icons.calendar_today_outlined, color: theme.colorScheme.primary),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
                     contentPadding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 16.0),
                   ),
@@ -142,23 +196,19 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
                     child: Text(
                       _fechaNacimiento == null
                           ? 'No seleccionada'
-                          : "${_fechaNacimiento!.day}/${_fechaNacimiento!.month}/${_fechaNacimiento!.year}",
+                          : "${_fechaNacimiento!.day.toString().padLeft(2, '0')}/${_fechaNacimiento!.month.toString().padLeft(2, '0')}/${_fechaNacimiento!.year}",
                       style: TextStyle(fontSize: 16, color: _fechaNacimiento == null ? theme.hintColor : theme.textTheme.bodyLarge?.color),
                     ),
                   ),
                 ),
               ),
-              if (_fechaNacimiento == null && _formKey.currentState?.validate() == false && _formKey.currentState?.widget == this) // Muestra error si no se selecciona fecha y el form ha sido validado
-                Padding(
-                  padding: const EdgeInsets.only(left: 12.0, top:0, bottom: 8.0),
-                  child: Text('Por favor seleccione su fecha de nacimiento.', style: TextStyle(color: theme.colorScheme.error, fontSize: 12)),
-                ),
+              // No se necesita la validación explícita aquí si se valida en _trySubmitForm antes de la llamada
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: DropdownButtonFormField<String>(
                   decoration: InputDecoration(
                     labelText: 'Tipo de Sangre',
-                    prefixIcon: Icon(Icons.bloodtype_outlined),
+                    prefixIcon: Icon(Icons.bloodtype_outlined, color: theme.colorScheme.primary),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
                   ),
                   value: _tipoDeSangre,
@@ -175,11 +225,11 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
                     });
                   },
                   validator: (value) => value == null ? 'Seleccione su tipo de sangre' : null,
-                  onSaved: (value) => _tipoDeSangre = value,
+                  // onSaved: (value) => _tipoDeSangre = value, // ya se actualiza con onChanged
                 ),
               ),
-              FilePickerPlaceholder(label: 'Identificación Oficial (INE, Pasaporte)'),
-              FilePickerPlaceholder(label: 'Fotografía Reciente'),
+              FilePickerPlaceholder(label: 'Identificación Oficial (INE, Pasaporte)'), // Funcionalidad no implementada en backend
+              FilePickerPlaceholder(label: 'Fotografía Reciente'), // Funcionalidad no implementada en backend
               RegistrationFormField(
                 labelText: 'Contraseña',
                 prefixIcon: Icons.lock_outline,
@@ -205,13 +255,14 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
                 },
               ),
               SizedBox(height: 30),
-              _isLoading
+              isLoading // Usar la variable isLoading del AuthService
                   ? Center(child: CircularProgressIndicator())
                   : ElevatedButton(
                 onPressed: _trySubmitForm,
                 child: Text('Registrarse'),
                 style: theme.elevatedButtonTheme.style?.copyWith(
                   minimumSize: MaterialStateProperty.all(Size(double.infinity, 50)),
+                  // Puedes añadir más estilos si lo deseas
                 ),
               ),
             ],
