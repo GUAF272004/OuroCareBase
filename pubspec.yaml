@@ -11,8 +11,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  provider: ^6.0.0 # Para gestión de estado
-  http: ^1.0.0     # Para llamadas HTTP (necesitarás configurar esto más adelante)
+  http: ^1.2.1 # O la versión más reciente
+  provider: ^6.0.0 # Asumiendo que ya lo usas
+  table_calendar: ^3.0.0 # Para el calendario de medicamentos
+  intl: ^0.19.0 # Para formateo de fechas
   qr_flutter: ^4.1.0 # Para generar QR (App Paciente)
   mobile_scanner: ^5.1.0 # Para escanear QR (App Doctor)
   # Descomenta y añade otros paquetes cuando los necesites:

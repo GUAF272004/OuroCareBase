@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../models/user_model.dart'; // Para el tipo User
 import 'patient_lookup_screen.dart';   // Para la búsqueda manual de pacientes
 import 'scan_qr_code_screen.dart';     // Para escanear el QR del paciente
+import 'notifications_screen.dart'; // <<<<<<<<<<<<<< IMPORTAR
+
 
 class DoctorDashboardScreen extends StatelessWidget {
   final User user; // El usuario doctor logueado
@@ -123,11 +125,9 @@ class DoctorDashboardScreen extends StatelessWidget {
           context,
           icon: Icons.notifications_active_outlined,
           title: 'Alertas y Notificaciones',
-          subtitle: 'Resultados de lab. listos, etc. (PENDIENTE)',
+          subtitle: 'Resultados de lab. listos, etc.', // Actualizar subtítulo
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('FUNCIONALIDAD PENDIENTE: Alertas y Notificaciones')),
-            );
+            Navigator.push(context, MaterialPageRoute(builder: (_) => NotificationsScreen())); // <<<<<<<<<<<<<< CAMBIAR
           },
         ),
 

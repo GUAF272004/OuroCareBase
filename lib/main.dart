@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'models/user_model.dart';
+import 'models/user_model.dart'; // Asegúrate que este modelo no cause problemas si no se usa directamente aquí
 import 'services/auth_service.dart';
+import 'services/api_service.dart'; // <<--- AÑADE ESTA LÍNEA (Importar ApiService)
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/loading_screen.dart';
@@ -23,7 +24,22 @@ class MyApp extends StatelessWidget {
 
     return MultiProvider(
       providers: [
+        // AuthService se provee primero
         ChangeNotifierProvider(create: (_) => AuthService()),
+
+        // ApiService se provee después y puede acceder a AuthService
+        // Usamos Provider.value si ApiService no es un ChangeNotifier,
+        // o ChangeNotifierProvider si sí lo es.
+        // Aquí asumimos que ApiService no es un ChangeNotifier y que su constructor
+        // puede tomar una instancia de AuthService.
+        Provider<ApiService>(
+          create: (context) {
+            // Obtiene la instancia de AuthService que ya está proveída
+            // 'listen: false' es importante en 'create' para evitar reconstrucciones innecesarias.
+            final authService = Provider.of<AuthService>(context, listen: false);
+            return ApiService(authService: authService); // Pasa la instancia de AuthService
+          },
+        ),
       ],
       child: MaterialApp(
         title: 'SaludChain App',

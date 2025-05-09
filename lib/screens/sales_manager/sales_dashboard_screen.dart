@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../../models/user_model.dart';
 import 'pending_prescriptions_view.dart'; // Importar
+import 'sales_history_screen.dart';
 
 class SalesManagerDashboardScreen extends StatelessWidget {
   final User user;
@@ -59,22 +60,9 @@ class SalesManagerDashboardScreen extends StatelessWidget {
           context,
           icon: Icons.history_edu_outlined,
           title: 'Historial de Ventas',
-          subtitle: 'Consultar transacciones realizadas (PENDIENTE)',
+          subtitle: 'Consultar transacciones realizadas', // Actualizar subtítulo
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('FUNCIONALIDAD PENDIENTE: Historial de Ventas')),
-            );
-          },
-        ),
-        _buildDashboardCard(
-          context,
-          icon: Icons.inventory_2_outlined,
-          title: 'Gestión de Inventario (Opcional)',
-          subtitle: 'Control de stock de medicamentos (PENDIENTE)',
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('FUNCIONALIDAD PENDIENTE: Gestión de Inventario')),
-            );
+            Navigator.push(context, MaterialPageRoute(builder: (_) => SalesHistoryScreen())); // <<<<<<<<<<<<<< CAMBIAR
           },
         ),
       ],

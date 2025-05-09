@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../../models/user_model.dart';
 import 'pending_lab_tests_view.dart'; // Importar
+import 'lab_test_history_screen.dart';
 
 class LabManagerDashboardScreen extends StatelessWidget {
   final User user;
@@ -59,11 +60,9 @@ class LabManagerDashboardScreen extends StatelessWidget {
           context,
           icon: Icons.history_toggle_off_outlined,
           title: 'Historial de Pruebas',
-          subtitle: 'Consultar resultados enviados previamente (PENDIENTE)',
+          subtitle: 'Consultar resultados enviados previamente', // Actualizar subtítulo
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('FUNCIONALIDAD PENDIENTE: Historial de Pruebas')),
-            );
+            Navigator.push(context, MaterialPageRoute(builder: (_) => LabTestHistoryScreen())); // <<<<<<<<<<<<<< CAMBIAR
           },
         ),
       ],
