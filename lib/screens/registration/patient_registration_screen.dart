@@ -26,7 +26,7 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
   // String _identificacionOficialPath;
   // String _fotografiaPath;
 
-  final List<String> _tiposDeSangre = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+  final List<String> _tiposDeSangre = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Desconocido'];
 
 
   @override
