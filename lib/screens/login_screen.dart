@@ -112,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Icon(Icons.medical_services_outlined, size: 80, color: theme.colorScheme.primary),
               SizedBox(height: 20),
               Text(
-                'Bienvenido a SaludChain',
+                'Bienvenido a OuroCore Health',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.headlineMedium?.copyWith(
                   color: theme.colorScheme.primary,

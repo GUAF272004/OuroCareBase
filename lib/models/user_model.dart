@@ -104,19 +104,19 @@ class PatientForDoctorView {
 
 List<PatientForDoctorView> samplePatients = [
   PatientForDoctorView(
-      id: 'p001', name: 'Ana Torres', email: 'ana.torres@email.com',
+      id: '3', name: 'Ana Torres', email: 'ana.torres@email.com',
       lastVisit: DateTime.now().subtract(Duration(days: 30)),
       dateOfBirth: DateTime(1985, 5, 15), phoneNumber: '555-0101',
       photoUrl: 'https://via.placeholder.com/150/FFA500/FFFFFF?Text=AT'
   ),
   PatientForDoctorView(
-      id: 'p002', name: 'Luis Vera', email: 'luis.vera@email.com',
+      id: '2', name: 'Luis Vera', email: 'luis.vera@email.com',
       lastVisit: DateTime.now().subtract(Duration(days: 90)),
       dateOfBirth: DateTime(1972, 11, 30), phoneNumber: '555-0102',
       photoUrl: 'https://via.placeholder.com/150/4682B4/FFFFFF?Text=LV'
   ),
   PatientForDoctorView(
-      id: 'p003', name: 'Sofia Castro', email: 'sofia.castro@email.com',
+      id: '1', name: 'Sofia Castro', email: 'sofia.castro@email.com',
       lastVisit: DateTime.now().subtract(Duration(days: 15)),
       dateOfBirth: DateTime(1990, 8, 22), phoneNumber: '555-0103',
       photoUrl: 'https://via.placeholder.com/150/32CD32/FFFFFF?Text=SC'
