@@ -66,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
               FlutterLogo(size: 100, textColor: Theme.of(context).primaryColor), // Placeholder
               SizedBox(height: 30),
               Text(
-                'Bienvenido a SaludChain',
+                'Bienvenido a OuroCare',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColorDark),
               ),
