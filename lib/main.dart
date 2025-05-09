@@ -69,6 +69,7 @@ class MyApp extends StatelessWidget {
           LoginScreen.routeName: (ctx) => LoginScreen(),
           // HomeScreen.routeName: (ctx) => HomeScreen(user: /* Necesitarás pasar el usuario aquí */),
           // Puedes definir más rutas aquí si usas named routes extensivamente
+          //Tellez, acaso recibiste esto?
         },
       ),
     );
